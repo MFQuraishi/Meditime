@@ -1,3 +1,5 @@
+//import 'dart:html';
+
 import 'package:flutter/material.dart';
 //import 'package:meditime/components/dynamicTimePicker.dart';
 import 'package:meditime/services/toastServices.dart';
@@ -221,6 +223,7 @@ class _AddMedicineFormState extends State<AddMedicineForm> {
   }
 
   Map<UniqueKey, Widget> customOptionsButton() {
+    var key = UniqueKey();
     Widget w = Container(
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -252,73 +255,27 @@ class _AddMedicineFormState extends State<AddMedicineForm> {
       ),
     );
 
-    var key = UniqueKey();
+ 
     return {key: w};
   }
 
   Map<Object, Object> timerWidget() {
     var key = UniqueKey();
-    times[key] = "Time";
+    times[key] = TimeOfDay.now().hour.toString() + ":" + TimeOfDay.now().minute.toString();
+    Function st = (time){
+      print("Setting State!!!!!!!!!!!!!!!!!");
+      //w.time = time;
+      setState(() {});
+    };
+    Function dt = (){
+      print("Deleting State!!!!!!!!!!!!!!!!");
+      timesList.remove(key);
+      times.remove(key);
+      setState(() {});
+    };
 
-    // print(times);
-    // print(key);
+    Widget w = TimeWidgets(time: times[key],key: key, setTime: st, deleteTime: dt);
 
-    Widget w = Container(
-      key: key,
-      padding: EdgeInsets.all(8),
-      margin: EdgeInsets.all(4),
-      width: double.infinity,
-      decoration: BoxDecoration(
-        border: Border.all(),
-        borderRadius: BorderRadius.circular(5),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-              flex: 4,
-              child: Container(
-                child: Text(
-                  times[key],
-                  style: TextStyle(fontSize: 25),
-                ),
-              )
-              ),
-          Expanded(
-            flex: 1,
-            child: Container(
-              child: TextButton(
-                child: Icon(Icons.timelapse),
-                onPressed: () async{
-                  var temp = await showTimePicker(context: context, initialTime: time);
-
-                  times[key] = temp.toString();
-                  setState(() {});
-                  print(times); 
-
-                },
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 1,
-            child: Container(
-              child: TextButton(
-                child: Icon(
-                  Icons.delete,
-                  color: Colors.red,
-                ),
-                onPressed: () {
-                  print(key);
-                  timesList.remove(key);
-                  times.remove(key);
-                  setState(() {});
-                },
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
     return {key: w};
   }
 
@@ -343,5 +300,72 @@ class _AddMedicineFormState extends State<AddMedicineForm> {
     }
 
     return tl;
+  }
+}
+
+
+class TimeWidgets extends StatelessWidget{
+  final String time;
+  final UniqueKey key;
+  final Function setTime;
+  final Function deleteTime;
+
+  TimeWidgets({this.time, this.key, this.setTime, this.deleteTime});
+
+  @override
+  Widget build(BuildContext context){
+    return Container(
+      //key: key,
+      padding: EdgeInsets.all(8),
+      margin: EdgeInsets.all(4),
+      width: double.infinity,
+      decoration: BoxDecoration(
+        border: Border.all(),
+        borderRadius: BorderRadius.circular(5),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+              flex: 4,
+              child: Container(
+                child: Text(
+                  time,
+                  style: TextStyle(fontSize: 25),
+                ),
+              )
+              ),
+          Expanded(
+            flex: 1,
+            child: Container(
+              child: TextButton(
+                child: Icon(Icons.timelapse),
+                onPressed: () async{
+                  var temp = await showTimePicker(context: context, initialTime: TimeOfDay.now());
+                  time = temp.hour.toString() + ":" + temp.minute.toString();
+                  setTime(time);
+                  print(key);
+                  print(time); 
+                },
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 1,
+            child: Container(
+              child: TextButton(
+                child: Icon(
+                  Icons.delete,
+                  color: Colors.red,
+                ),
+                onPressed: () {
+                  print(key);
+                  deleteTime();
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
