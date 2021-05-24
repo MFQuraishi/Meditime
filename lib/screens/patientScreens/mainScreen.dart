@@ -29,6 +29,7 @@ class MainScreen extends StatelessWidget{
     // print("just able to come here");
     showModalBottomSheet(
         context: context,
+        isScrollControlled: true,
         builder:(context){          
             return AddMedicineForm();
         },

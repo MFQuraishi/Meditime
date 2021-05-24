@@ -1,9 +1,7 @@
-//import 'dart:html';
-
 import 'package:flutter/material.dart';
-//import 'package:meditime/components/dynamicTimePicker.dart';
 import 'package:meditime/services/toastServices.dart';
 import 'package:meditime/constants.dart';
+import 'package:meditime/screens/patientScreens/components/timePickerWidget.dart';
 
 class AddMedicineForm extends StatefulWidget {
   @override
@@ -12,34 +10,64 @@ class AddMedicineForm extends StatefulWidget {
 
 class _AddMedicineFormState extends State<AddMedicineForm> {
   TimeOfDay time = TimeOfDay.now();
-  String noOfTime;
-  Map<UniqueKey, Widget> timesList = {};
-  Map<UniqueKey, Object> times = {};
+  //String noOfTime;
+  Map<UniqueKey, String> times = {};
+
+  bool showCustom = false;
+
+  bool checked = false;
 
   final _formKey = GlobalKey<FormState>();
   final List<String> timeOptions = ["1", "2", "3", "custom"];
   final List<String> unitOfDoses = ["mg", "ml", "pills"];
-  //DynamicTimePicker dtp = new DynamicTimePicker();
-  //List<Widget> timesWidgetList = [];
-
   final List<String> typeOfDoses = [
-    "Insulin",
+    "Injection",
     "Tablet",
     "Capsule",
     "Ointment",
     "Spray"
   ];
 
+  dynamic interval = "Everyday";
+  Widget selectIntervalWidgets = SizedBox();
+
+  DateTimeRange dateRange;
+
+  Map<String, dynamic> masterFormObject = {
+    "name": "",
+    "type": "",
+    "amount":"",
+    "units":"",
+    "description":"",
+    "timesADay": [],
+    "interval":dynamic,
+    "to-from": DateTimeRange,
+  };
+
   @override
   Widget build(BuildContext context) {
-    //Size size = MediaQuery.of(context).size;
-
     return SingleChildScrollView(
       padding: EdgeInsets.all(10),
       child: Form(
         key: _formKey,
         child: Column(
           children: <Widget>[
+//*************************** BACK BUTTON ******************************************
+            Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                TextButton(
+                  child: Icon(Icons.arrow_back),
+                  style: TextButton.styleFrom(
+                    primary: meditimePrimary,
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                )
+              ],
+            ),
+//************************** NAME OF MEDICINE ******************************************
             TextFormField(
               validator: (value) =>
                   (value == null || value.isEmpty) ? "fill the value" : null,
@@ -48,10 +76,14 @@ class _AddMedicineFormState extends State<AddMedicineForm> {
                 hintText: "Medicine Name",
                 border: OutlineInputBorder(),
               ),
+              onChanged: (value){
+                masterFormObject["name"]=value;
+              },
             ),
             SizedBox(
               height: 10,
             ),
+//*************************** TYPE OF MEDICINE ******************************************
             DropdownButtonFormField(
               validator: (value) => (value == null) ? "Type?" : null,
               items: typeOfDoses
@@ -61,7 +93,9 @@ class _AddMedicineFormState extends State<AddMedicineForm> {
                       ))
                   .toList(),
               //value: null,
-              onChanged: (value) => print(value),
+              onChanged: (value){
+                masterFormObject["type"] = value;
+              },
               decoration: InputDecoration(
                 border: OutlineInputBorder(),
                 hintText: "Type",
@@ -73,6 +107,7 @@ class _AddMedicineFormState extends State<AddMedicineForm> {
             ),
             Row(
               children: [
+//*************************** AMOUNT OF MEDICINE ******************************************
                 Flexible(
                   flex: 1,
                   child: TextFormField(
@@ -85,11 +120,15 @@ class _AddMedicineFormState extends State<AddMedicineForm> {
                       labelText: "Amount",
                       border: OutlineInputBorder(),
                     ),
+                    onChanged: (value){
+                      masterFormObject["amount"]=value;
+                    },
                   ),
                 ),
                 SizedBox(
                   width: 10,
                 ),
+//************************ UNITS OF MEDICINE ******************************************
                 Flexible(
                   flex: 1,
                   child: DropdownButtonFormField(
@@ -100,7 +139,7 @@ class _AddMedicineFormState extends State<AddMedicineForm> {
                               value: type,
                             ))
                         .toList(),
-                    onChanged: (value) => {print(value)},
+                    onChanged: (value) => {masterFormObject["units"]=value},
                     //value: unitOfDoses[0],
                     decoration: InputDecoration(
                       border: OutlineInputBorder(),
@@ -114,21 +153,36 @@ class _AddMedicineFormState extends State<AddMedicineForm> {
             SizedBox(
               height: 10,
             ),
+//**************************** MEDICINE DESCRIPTION ******************************************
             TextFormField(
               decoration: InputDecoration(
                 hintText: "Description",
                 labelText: "Description (Optional)",
                 border: OutlineInputBorder(),
               ),
+              onChanged: (value)=>{masterFormObject["description"]=value},
             ),
             SizedBox(
               height: 10,
             ),
+
+//*************************** NO. OF TIMES A DAY ******************************************
             Container(
               padding: EdgeInsets.all(20.0),
+              decoration: BoxDecoration(
+                color: meditimeLightColor,
+                boxShadow: [
+                  BoxShadow(
+                    color: meditimePrimary,
+                    spreadRadius: 2,
+                    blurRadius: 2,
+                  ),
+                ],
+              ),
               child: Column(
                 children: [
-                  Text("How many times a day",
+                  Text(
+                    "How many times a day",
                     style: TextStyle(
                       fontSize: 18,
                     ),
@@ -139,9 +193,17 @@ class _AddMedicineFormState extends State<AddMedicineForm> {
                   DropdownButtonFormField(
                     onChanged: (value) {
                       if (value != null) {
-                        setState(() {
-                          timesList = listOfPickers(value);
-                        });
+                        times = {};
+                        if (value == "custom") {
+                          showCustom = true;
+                          addTimeInMap();
+                        } else {
+                          showCustom = false;
+                          for (int i = 0; i < int.parse(value); i++) {
+                            addTimeInMap();
+                          }
+                        }
+                        setState(() {});
                       }
                     },
                     items: timeOptions
@@ -157,28 +219,146 @@ class _AddMedicineFormState extends State<AddMedicineForm> {
                   SizedBox(
                     height: 8,
                   ),
-                  //...timesList.values.toList(),
-                  ...arrangedPickerFields(),
-                ],
-              ),
-              decoration: BoxDecoration(
-                color: meditimeLightColor,
-                boxShadow: [
-                  BoxShadow(
-                    color: meditimePrimary,
-                    spreadRadius: 2,
-                    blurRadius: 2,
-                  ),
+                  ...createTimeWidgets(),
+                  (showCustom)
+                      ? customOptionsButton()
+                      : SizedBox(
+                          height: 10,
+                        )
                 ],
               ),
             ),
             SizedBox(
               height: 10,
             ),
+//*************** NO OF DAYS IN A WEEK, ETC ******************************************
+            Container(
+              padding: EdgeInsets.all(20),
+              width: double.infinity,
+              decoration: BoxDecoration(color: meditimeLightColor, boxShadow: [
+                BoxShadow(
+                  blurRadius: 2,
+                  spreadRadius: 2,
+                  color: meditimePrimary,
+                ),
+              ]),
+              child: Column(
+                children: [
+                  DropdownButtonFormField(
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(),
+                      hintText: "Select Interval",
+                      labelText: "Select Interval",
+                    ),
+                    value: "Everyday",
+                    items: ["Everyday", "After Every", "Days Of Week"]
+                        .map(
+                          (option) => DropdownMenuItem(
+                            child: Text(option),
+                            value: option,
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (option) {
+                      if (option == "Everyday") {
+                        interval = option;
+                        setState(() {
+                          selectIntervalWidgets = SizedBox();
+                        });
+                      } else {
+                        selectIntervalWidgets = intervalWidget(option);
+                        setState(() {});
+                      }
+                    },
+                  ),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  selectIntervalWidgets,
+                ],
+              ),
+            ),
+            SizedBox(
+              height: 10,
+            ),
+
+//*************************** TO-FROM *********************************************
+            Container(
+              padding: EdgeInsets.all(20),
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: meditimeLightColor,
+                boxShadow: [
+                  BoxShadow(
+                    blurRadius: 2,
+                    spreadRadius: 2,
+                    color: meditimePrimary,
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  Text(
+                    (dateRange != null)
+                        ? "${dateRange.start.day}/${dateRange.start.month}/${dateRange.start.year}"
+                        : "START",
+                    style: TextStyle(fontSize: 20),
+                  ),
+
+                  Text(
+                    ":",
+                    style: TextStyle(fontSize: 20),
+                  ),
+                  Text(
+                    (dateRange != null)
+                        ? "${dateRange.end.day}/${dateRange.end.month}/${dateRange.end.year}"
+                        : "UNTIL",
+                    style: TextStyle(fontSize: 20),
+                  ),
+                  //"${dateRange.end.day}/${dateRange.end.month}/${dateRange.end.year}"
+                  TextButton(
+                    onPressed: () async {
+                      print(dateRange);
+                      dateRange = await showDateRangePicker(
+                          context: context,
+                          // locale: Locale('de'),
+                          initialEntryMode: DatePickerEntryMode.input,
+                          firstDate: DateTime.now(),
+                          lastDate:
+                              DateTime.now().add(Duration(days: 5 * 365)));
+                      setState(() {});
+                      print(dateRange);
+                    },
+                    child: Icon(Icons.calendar_today),
+                    style: TextButton.styleFrom(primary: meditimePrimary),
+                  )
+                ],
+              ),
+            ),
+            SizedBox(
+              height: 10,
+            ),
+//************************ SUBMIT BUTTON ******************************************
             ElevatedButton(
               onPressed: () {
                 if (_formKey.currentState.validate()) {
-                  ToastServices.defaultToast("good!!");
+                  masterFormObject["timesADay"] = times.values.toList();
+                  masterFormObject["interval"] = interval;
+                  masterFormObject["to-from"] = dateRange;
+
+
+                  bool f = validateCustomFields(masterFormObject["timesADay"], masterFormObject["interval"], masterFormObject["to-from"]);
+                  if(f){
+                    print(masterFormObject);
+                    ToastServices.defaultToast("good!!");
+                  }
+                  else{
+                    ToastServices.defaultToast("fill all fields");
+                  }
+
+
+                  print(masterFormObject);
                 } else {
                   ToastServices.defaultToast("Some thing is invalid!!");
                 }
@@ -195,36 +375,105 @@ class _AddMedicineFormState extends State<AddMedicineForm> {
     );
   }
 
-  Map<UniqueKey, Widget> listOfPickers(option) {
-    timesList = {};
-    times = {};
-    if (option == "custom") {
-      print(option);
-      return customOptionPicker();
-    } else {
-      return addPickerFields(int.parse(option));
+//********************** ******************************** *******************************
+//********************** ******************************** *******************************
+//********************** *** BUILD FUNCTION ENDS HERE *** *******************************
+//********************** ******************************** *******************************
+//********************** ******************************** *******************************
+
+//*********** CHECK IF TIMESADAY INTERVAL AND TO-FROM IS FILLED PROPERLY ****************
+bool validateCustomFields(tad, interval, tf){
+  if(tad.length == 0){
+    return false;
+  }
+  else if(tad.indexOf("Time") != -1){
+    return false;
+  }
+
+  
+  if(interval != "Everyday"){
+    if(interval.runtimeType == 1.runtimeType && interval < 1){
+      return false;
+    }
+    else if(interval.runtimeType == [].runtimeType){
+      int falseCount = 0;
+      interval.forEach((value){
+        if(!value){
+          falseCount += 1;
+        }
+      });
+      if(falseCount == 7){
+        return false;
+      }
     }
   }
 
-  Map<UniqueKey, Widget> customOptionPicker() {
-    Map<Object, Object> tempTimerWidget = timerWidget();
-    Map<Object, Object> tempcustomOptionsButton = customOptionsButton();
+  if(tf==null){
+    return false;
+  }
+  
+  return true;
+  
+}
 
-    if (timesList.isEmpty) {
-      timesList[tempTimerWidget.keys.toList()[0]] =
-          tempTimerWidget.values.toList()[0];
-      timesList[tempcustomOptionsButton.keys.toList()[0]] =
-          tempcustomOptionsButton.values.toList()[0];
-    } else {
-      timesList[tempTimerWidget.keys.toList()[0]] =
-          tempTimerWidget.values.toList()[0];
+
+
+
+
+
+//********************** INTERVAL OF MEDICINES ******************************************
+  Widget intervalWidget(option) {
+    if (option == "After Every") {
+      return TextFormField(
+        validator: (value) =>
+            (value == null || value.isEmpty) ? "Enter Interval" : null,
+        keyboardType: TextInputType.number,
+        onChanged: (value) {
+          interval = value;
+        },
+        decoration: InputDecoration(
+          hintText: "Enter Interval",
+          labelText: "Enter Interval",
+          border: OutlineInputBorder(),
+        ),
+      );
+    } else if (option == "Days Of Week") {
+      List days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      interval = [];
+
+      List<Widget> w = [];
+
+      for (int i = 0; i < 7; i++) {
+        interval.add(false);
+        w.add(Column(
+          children: [
+            StatefulBuilder(
+                builder: (BuildContext context, StateSetter setState) {
+              return Checkbox(
+                  value: interval[i],
+                  onChanged: (value) {
+                    interval[i] = value;
+                    print(interval);
+                    setState(() {});
+                  });
+            }),
+            Text(days[i]),
+          ],
+        ));
+      }
+      return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: w,
+          mainAxisAlignment: MainAxisAlignment.start,
+        ),
+      );
     }
-    return timesList;
   }
 
-  Map<UniqueKey, Widget> customOptionsButton() {
-    var key = UniqueKey();
-    Widget w = Container(
+//**************** ADD AND RESET BUTTON FOR x times a day *******************************
+  Widget customOptionsButton() {
+    return Container(
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -233,7 +482,7 @@ class _AddMedicineFormState extends State<AddMedicineForm> {
                 primary: meditimePrimary,
               ),
               onPressed: () {
-                customOptionPicker();
+                addTimeInMap();
                 setState(() {});
               },
               child: Icon(Icons.add)),
@@ -245,127 +494,59 @@ class _AddMedicineFormState extends State<AddMedicineForm> {
                 primary: Colors.grey,
               ),
               onPressed: () {
-                timesList = {};
                 times = {};
-                customOptionPicker();
+                addTimeInMap();
                 setState(() {});
               },
               child: Icon(Icons.settings_backup_restore))
         ],
       ),
     );
-
- 
-    return {key: w};
   }
 
-  Map<Object, Object> timerWidget() {
-    var key = UniqueKey();
-    times[key] = TimeOfDay.now().hour.toString() + ":" + TimeOfDay.now().minute.toString();
-    Function st = (time){
-      print("Setting State!!!!!!!!!!!!!!!!!");
-      //w.time = time;
-      setState(() {});
-    };
-    Function dt = (){
-      print("Deleting State!!!!!!!!!!!!!!!!");
-      timesList.remove(key);
+//************************ DELETE FROM MAP OF times[key:time] ******************************************
+  bool deleteTimeFromMap(key) {
+    if (key != null) {
       times.remove(key);
-      setState(() {});
-    };
-
-    Widget w = TimeWidgets(time: times[key],key: key, setTime: st, deleteTime: dt);
-
-    return {key: w};
-  }
-
-  Map<UniqueKey, Widget> addPickerFields(option) {
-    var temp = {};
-    for (int i = 0; i < option; i++) {
-      temp = timerWidget();
-      timesList[temp.keys.toList()[0]] = temp.values.toList()[0];
+      return true;
     }
-
-    return timesList;
+    return false;
   }
 
-  List arrangedPickerFields() {
-    var tl = timesList.values.toList();
-    var temp;
-
-    if (tl.length > 2) {
-      temp = tl[1];
-      tl[1] = tl[tl.length - 1];
-      tl[tl.length - 1] = temp;
+//********************** SETTING TIME VALUE IN MAP times[key:time] ******************************************
+  bool setTimeInMap(key, time) {
+    if (key != null) {
+      times.update(key, (oldTime) => time, ifAbsent: () => time);
+      return true;
     }
-
-    return tl;
+    return false;
   }
-}
 
+//************************ ADD TIME VALUE IN MAP times[key:time] ******************************************
 
-class TimeWidgets extends StatelessWidget{
-  final String time;
-  final UniqueKey key;
-  final Function setTime;
-  final Function deleteTime;
+  bool addTimeInMap() {
+    var key = UniqueKey();
+    times.putIfAbsent(key, () => "Time");
+    return true;
+  }
 
-  TimeWidgets({this.time, this.key, this.setTime, this.deleteTime});
-
-  @override
-  Widget build(BuildContext context){
-    return Container(
-      //key: key,
-      padding: EdgeInsets.all(8),
-      margin: EdgeInsets.all(4),
-      width: double.infinity,
-      decoration: BoxDecoration(
-        border: Border.all(),
-        borderRadius: BorderRadius.circular(5),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-              flex: 4,
-              child: Container(
-                child: Text(
-                  time,
-                  style: TextStyle(fontSize: 25),
-                ),
-              )
-              ),
-          Expanded(
-            flex: 1,
-            child: Container(
-              child: TextButton(
-                child: Icon(Icons.timelapse),
-                onPressed: () async{
-                  var temp = await showTimePicker(context: context, initialTime: TimeOfDay.now());
-                  time = temp.hour.toString() + ":" + temp.minute.toString();
-                  setTime(time);
-                  print(key);
-                  print(time); 
-                },
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 1,
-            child: Container(
-              child: TextButton(
-                child: Icon(
-                  Icons.delete,
-                  color: Colors.red,
-                ),
-                onPressed: () {
-                  print(key);
-                  deleteTime();
-                },
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+//******************** CREATING A WIDGET LIST FROM times.values LIST *****************************************
+  List<Widget> createTimeWidgets() {
+    List<Widget> widgetList = [];
+    times.forEach((key, value) {
+      widgetList.add(TimeWidgets(
+        key: key,
+        time: value,
+        setTime: (key, value) {
+          setTimeInMap(key, value);
+          setState(() {});
+        },
+        deleteTime: (key) {
+          deleteTimeFromMap(key);
+          setState(() {});
+        },
+      ));
+    });
+    return widgetList;
   }
 }
