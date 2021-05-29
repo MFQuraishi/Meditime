@@ -8,7 +8,7 @@ class MainScreen extends StatelessWidget{
   Widget build(BuildContext context){
     return Scaffold(
       appBar: AppBar(
-        title: Text("logged in as Patient"),
+        title: Text("Guest Session"),
       ),
       body: Body(),
       floatingActionButton: FloatingActionButton(

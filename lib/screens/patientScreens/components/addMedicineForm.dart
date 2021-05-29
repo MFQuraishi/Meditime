@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:meditime/services/toastServices.dart';
 import 'package:meditime/constants.dart';
 import 'package:meditime/screens/patientScreens/components/timePickerWidget.dart';
+import 'package:meditime/database/service/medsDatabaseModel.dart';
+import 'package:meditime/database/helper/medsDBHelper.dart';
 
 class AddMedicineForm extends StatefulWidget {
   @override
@@ -10,14 +12,9 @@ class AddMedicineForm extends StatefulWidget {
 
 class _AddMedicineFormState extends State<AddMedicineForm> {
   TimeOfDay time = TimeOfDay.now();
-  //String noOfTime;
   Map<UniqueKey, String> times = {};
-
   bool showCustom = false;
-
-  bool checked = false;
-
-  final _formKey = GlobalKey<FormState>();
+  //bool checked = false;
   final List<String> timeOptions = ["1", "2", "3", "custom"];
   final List<String> unitOfDoses = ["mg", "ml", "pills"];
   final List<String> typeOfDoses = [
@@ -27,23 +24,21 @@ class _AddMedicineFormState extends State<AddMedicineForm> {
     "Ointment",
     "Spray"
   ];
-
   dynamic interval = "Everyday";
   Widget selectIntervalWidgets = SizedBox();
-
   DateTimeRange dateRange;
-
   Map<String, dynamic> masterFormObject = {
     "name": "",
     "type": "",
-    "amount":"",
-    "units":"",
-    "description":"",
+    "amount": 0.0,
+    "units": "",
+    "description": "",
     "timesADay": [],
-    "interval":dynamic,
+    "interval": dynamic,
     "to-from": DateTimeRange,
   };
 
+  final _formKey = GlobalKey<FormState>();
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -76,8 +71,8 @@ class _AddMedicineFormState extends State<AddMedicineForm> {
                 hintText: "Medicine Name",
                 border: OutlineInputBorder(),
               ),
-              onChanged: (value){
-                masterFormObject["name"]=value;
+              onChanged: (value) {
+                masterFormObject["name"] = value;
               },
             ),
             SizedBox(
@@ -93,7 +88,7 @@ class _AddMedicineFormState extends State<AddMedicineForm> {
                       ))
                   .toList(),
               //value: null,
-              onChanged: (value){
+              onChanged: (value) {
                 masterFormObject["type"] = value;
               },
               decoration: InputDecoration(
@@ -120,8 +115,8 @@ class _AddMedicineFormState extends State<AddMedicineForm> {
                       labelText: "Amount",
                       border: OutlineInputBorder(),
                     ),
-                    onChanged: (value){
-                      masterFormObject["amount"]=value;
+                    onChanged: (value) {
+                      masterFormObject["amount"] = double.parse(value);
                     },
                   ),
                 ),
@@ -139,7 +134,7 @@ class _AddMedicineFormState extends State<AddMedicineForm> {
                               value: type,
                             ))
                         .toList(),
-                    onChanged: (value) => {masterFormObject["units"]=value},
+                    onChanged: (value) => {masterFormObject["units"] = value},
                     //value: unitOfDoses[0],
                     decoration: InputDecoration(
                       border: OutlineInputBorder(),
@@ -160,7 +155,7 @@ class _AddMedicineFormState extends State<AddMedicineForm> {
                 labelText: "Description (Optional)",
                 border: OutlineInputBorder(),
               ),
-              onChanged: (value)=>{masterFormObject["description"]=value},
+              onChanged: (value) => {masterFormObject["description"] = value},
             ),
             SizedBox(
               height: 10,
@@ -231,7 +226,7 @@ class _AddMedicineFormState extends State<AddMedicineForm> {
             SizedBox(
               height: 10,
             ),
-//*************** NO OF DAYS IN A WEEK, ETC ******************************************
+//************* INTERVAL NO OF DAYS IN A WEEK, ETC *****************************************
             Container(
               padding: EdgeInsets.all(20),
               width: double.infinity,
@@ -301,7 +296,7 @@ class _AddMedicineFormState extends State<AddMedicineForm> {
                 children: [
                   Text(
                     (dateRange != null)
-                        ? "${dateRange.start.day}/${dateRange.start.month}/${dateRange.start.year}"
+                        ? "${dateRange.start.day.toString().padLeft(2, "0")}/${dateRange.start.month.toString().padLeft(2, "0")}/${dateRange.start.year}"
                         : "START",
                     style: TextStyle(fontSize: 20),
                   ),
@@ -312,21 +307,20 @@ class _AddMedicineFormState extends State<AddMedicineForm> {
                   ),
                   Text(
                     (dateRange != null)
-                        ? "${dateRange.end.day}/${dateRange.end.month}/${dateRange.end.year}"
+                        ? "${dateRange.end.day.toString().padLeft(2, "0")}/${dateRange.end.month.toString().padLeft(2, "0")}/${dateRange.end.year}"
                         : "UNTIL",
                     style: TextStyle(fontSize: 20),
                   ),
-                  //"${dateRange.end.day}/${dateRange.end.month}/${dateRange.end.year}"
                   TextButton(
                     onPressed: () async {
                       print(dateRange);
                       dateRange = await showDateRangePicker(
                           context: context,
                           // locale: Locale('de'),
-                          initialEntryMode: DatePickerEntryMode.input,
+                          //initialEntryMode: DatePickerEntryMode.input,
                           firstDate: DateTime.now(),
-                          lastDate:
-                              DateTime.now().add(Duration(days: 5 * 365)));
+                          lastDate: DateTime.now().add(Duration(days: 5 * 365)),
+                      );
                       setState(() {});
                       print(dateRange);
                     },
@@ -341,24 +335,34 @@ class _AddMedicineFormState extends State<AddMedicineForm> {
             ),
 //************************ SUBMIT BUTTON ******************************************
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 if (_formKey.currentState.validate()) {
                   masterFormObject["timesADay"] = times.values.toList();
                   masterFormObject["interval"] = interval;
                   masterFormObject["to-from"] = dateRange;
 
+                  bool f = validateCustomFields(
+                      masterFormObject["timesADay"],
+                      masterFormObject["interval"],
+                      masterFormObject["to-from"]);
+                  if (f) {
+                    //print(masterFormObject);
 
-                  bool f = validateCustomFields(masterFormObject["timesADay"], masterFormObject["interval"], masterFormObject["to-from"]);
-                  if(f){
-                    print(masterFormObject);
-                    ToastServices.defaultToast("good!!");
-                  }
-                  else{
+                    MedsDatabaseModel medsModel =
+                        MedsDatabaseModel(masterFormObject);
+                    MedsDBHelper dbhelper = await MedsDBHelper();
+
+                    var id = await dbhelper.create(medsModel.toMap());
+                    //var id = await a.create();
+                    if (id != null) {
+                      ToastServices.defaultToast("good!!");
+                      Navigator.pop(context);
+                      print(await dbhelper.selectAll());
+                    }
+                  } else {
                     ToastServices.defaultToast("fill all fields");
                   }
-
-
-                  print(masterFormObject);
+                  // print(masterFormObject);
                 } else {
                   ToastServices.defaultToast("Some thing is invalid!!");
                 }
@@ -376,50 +380,39 @@ class _AddMedicineFormState extends State<AddMedicineForm> {
   }
 
 //********************** ******************************** *******************************
-//********************** ******************************** *******************************
 //********************** *** BUILD FUNCTION ENDS HERE *** *******************************
-//********************** ******************************** *******************************
 //********************** ******************************** *******************************
 
 //*********** CHECK IF TIMESADAY INTERVAL AND TO-FROM IS FILLED PROPERLY ****************
-bool validateCustomFields(tad, interval, tf){
-  if(tad.length == 0){
-    return false;
-  }
-  else if(tad.indexOf("Time") != -1){
-    return false;
-  }
-
-  
-  if(interval != "Everyday"){
-    if(interval.runtimeType == 1.runtimeType && interval < 1){
+  bool validateCustomFields(tad, interval, tf) {
+    if (tad.length == 0) {
+      return false;
+    } else if (tad.indexOf("Time") != -1) {
       return false;
     }
-    else if(interval.runtimeType == [].runtimeType){
-      int falseCount = 0;
-      interval.forEach((value){
-        if(!value){
-          falseCount += 1;
-        }
-      });
-      if(falseCount == 7){
+
+    if (interval != "Everyday") {
+      if (interval.runtimeType == 1.runtimeType && interval < 1) {
         return false;
+      } else if (interval.runtimeType == [].runtimeType) {
+        int falseCount = 0;
+        interval.forEach((value) {
+          if (!value) {
+            falseCount += 1;
+          }
+        });
+        if (falseCount == 7) {
+          return false;
+        }
       }
     }
+
+    if (tf == null) {
+      return false;
+    }
+
+    return true;
   }
-
-  if(tf==null){
-    return false;
-  }
-  
-  return true;
-  
-}
-
-
-
-
-
 
 //********************** INTERVAL OF MEDICINES ******************************************
   Widget intervalWidget(option) {
