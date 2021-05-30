@@ -2,68 +2,74 @@ import 'package:flutter/material.dart';
 import 'package:meditime/constants.dart';
 import 'package:meditime/database/helper/medsDBHelper.dart';
 
-class Body extends StatefulWidget {
-  @override
-  _BodyState createState() => _BodyState();
-}
+class MedsList extends StatelessWidget {
 
-class _BodyState extends State<Body> {
-  MedsDBHelper medsDBHelper = MedsDBHelper();
-  List<Map<String, dynamic>> medsDataList = [];
-  List<Widget> medsListTile = [];
+  Function deleteRow;
+  List<Map<String, dynamic>> tilesList;
+  MedsList(this.tilesList, this.deleteRow);
 
   @override
   Widget build(BuildContext context) {
-    if (true) {
-      updateMedsData();
-    }
-    return (medsListTile.length == 0)
-        ? Center(
-          child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Image.asset("assets/images/reminder.png",width: 250,),
-                SizedBox(height: 10,),
-                Text("No Medicines Added", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),)
-                ],
+    Size size = MediaQuery.of(context).size;
+    return ListView.builder(
+        itemCount: tilesList.length,
+        itemBuilder: (BuildContext context, int i) {
+          return Card(
+              child: ListTile(
+            leading: Icon(
+              Icons.medical_services_rounded,
             ),
-        )
-        : ListView(
-            children: [
-              ...medsListTile,
-              GestureDetector(
-                child: Icon(Icons.add),
-                onTap: () {
-                  print(medsListTile);
-                  print("inside gesture detecter");
-                  setState(() {
-                    medsListTile.insert(0, generateListTile());
-                    print(medsListTile);
-                  });
-                },
+            title: Text(tilesList[i]["name"]),
+            subtitle: Text(tilesList[i]["interval"]),
+            tileColor: Colors.white,
+            trailing: TextButton(
+              child: Icon(
+                Icons.delete,
+                color: Colors.red,
               ),
-            ],
-          );
+              onPressed: () {
+                deleteRow(tilesList[i]["_id"]);
+              },
+            ),
+            onTap: () async {
+              //TODO: show detailed information when a tile is tapped
+              await showDialog(context: context, builder: (BuildContext context){
+                return Dialog(
+                  child: Container(
+                    // width: size.width,
+                    height: size.height*0.6,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            medsInfoRow("Name",tilesList[i]["name"]),
+                            medsInfoRow("Type",tilesList[i]["type"]),
+                            medsInfoRow("Amount",tilesList[i]["amount"].toString()),
+                            medsInfoRow("Units",tilesList[i]["units"]),
+                            medsInfoRow("Description",tilesList[i]["description"]),
+                            medsInfoRow("Interval",tilesList[i]["interval"]),
+                            medsInfoRow("From-To",tilesList[i]["from_date"]),
+                            medsInfoRow("From-To",tilesList[i]["to_date"]),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              });
+            },
+          ));
+        });
   }
-
-  void updateMedsData() async {
-    medsDataList = await medsDBHelper.selectAll();
-    print(medsDataList);
-  }
-
-  Widget generateListTile() {
-    
-    return ListTile(
-      leading: Text("leading"),
-      title: Text("title"),
-      subtitle: Text("subtitle"),
-      trailing: TextButton(
-        child: Icon(Icons.delete,color: Colors.red,),
-        onPressed: (){
-        //TODO: add functions to on pressed 
-        },
-      ),
-      tileColor: meditimePrimary,
+  medsInfoRow(parameter ,value){
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(parameter, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),),
+        Text(value, style: TextStyle(fontSize: 15),)
+      ],
     );
   }
 }

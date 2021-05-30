@@ -6,6 +6,8 @@ import 'package:meditime/database/service/medsDatabaseModel.dart';
 import 'package:meditime/database/helper/medsDBHelper.dart';
 
 class AddMedicineForm extends StatefulWidget {
+  Function onFormSave;
+  AddMedicineForm(this.onFormSave);
   @override
   _AddMedicineFormState createState() => _AddMedicineFormState();
 }
@@ -358,9 +360,11 @@ class _AddMedicineFormState extends State<AddMedicineForm> {
                       ToastServices.defaultToast("good!!");
                       Navigator.pop(context);
                       print(await dbhelper.selectAll());
+                      widget.onFormSave(true);
                     }
                   } else {
                     ToastServices.defaultToast("fill all fields");
+                    widget.onFormSave(false);
                   }
                   // print(masterFormObject);
                 } else {

@@ -16,4 +16,9 @@ class MedsDBHelper{
     return result;
   }
 
+  Future<int> deleteRow(id) async {
+    Database db = await MedsDatabase.instance.database;
+    return db.delete("guestTable", where: '_id=?', whereArgs: [id]);
+  }
+
 }
