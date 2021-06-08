@@ -32,7 +32,6 @@ class MedsList extends StatelessWidget {
               },
             ),
             onTap: () async {
-              //TODO: show detailed information when a tile is tapped
               await showDialog(context: context, builder: (BuildContext context){
                 return Dialog(
                   child: Container(
@@ -50,8 +49,8 @@ class MedsList extends StatelessWidget {
                             medsInfoRow("Units",tilesList[i]["units"]),
                             medsInfoRow("Description",tilesList[i]["description"]),
                             medsInfoRow("Interval",tilesList[i]["interval"]),
-                            medsInfoRow("From-To",tilesList[i]["from_date"]),
-                            medsInfoRow("From-To",tilesList[i]["to_date"]),
+                            medsInfoRow("From","${changeDateTimeFormat(tilesList[i]["from_date"])}"),
+                            medsInfoRow("To","${changeDateTimeFormat(tilesList[i]["to_date"])}"),
                           ],
                         ),
                       ),
@@ -71,5 +70,10 @@ class MedsList extends StatelessWidget {
         Text(value, style: TextStyle(fontSize: 15),)
       ],
     );
+  }
+
+  String changeDateTimeFormat(timeInString){
+    DateTime changedTime = DateTime.parse(timeInString);
+    return changedTime.day.toString().padLeft(2, "0")+"/"+changedTime.month.toString().padLeft(2, "0")+"/"+changedTime.year.toString();
   }
 }

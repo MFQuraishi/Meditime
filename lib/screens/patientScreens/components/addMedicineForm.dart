@@ -5,6 +5,14 @@ import 'package:meditime/screens/patientScreens/components/timePickerWidget.dart
 import 'package:meditime/database/service/medsDatabaseModel.dart';
 import 'package:meditime/database/helper/medsDBHelper.dart';
 
+
+///*************************************************************************
+import 'package:meditime/notifications/notificationManager.dart';
+///*************************************************************************
+
+
+
+
 class AddMedicineForm extends StatefulWidget {
   Function onFormSave;
   AddMedicineForm(this.onFormSave);
@@ -13,6 +21,9 @@ class AddMedicineForm extends StatefulWidget {
 }
 
 class _AddMedicineFormState extends State<AddMedicineForm> {
+  ///*************************************************************************
+  NotificationManager nm = NotificationManager();
+  ///*************************************************************************
   TimeOfDay time = TimeOfDay.now();
   Map<UniqueKey, String> times = {};
   bool showCustom = false;
@@ -360,6 +371,11 @@ class _AddMedicineFormState extends State<AddMedicineForm> {
                       ToastServices.defaultToast("good!!");
                       Navigator.pop(context);
                       print(await dbhelper.selectAll());
+
+                      ///*************************************************************************
+                      nm.scheduleNotification();
+                      ///*************************************************************************
+
                       widget.onFormSave(true);
                     }
                   } else {
