@@ -44,13 +44,17 @@ class Notifications {
   //       payload: "first notification");
   // }
 
-  Future<void> scheduleNotification(time, name) async {
+  Future<void> scheduleNotification(time, name, id) async {
     await flutterLocalNotificationsPlugin.schedule(
-        1,
+        id,
         name,
         "take your medicine",
         time,
         NotificationDetails(android: androidNotificationDetails),
         payload: "scheduled notification");
+  }
+
+  Future<List> getListOfTodaysNotifications()async{
+    return await flutterLocalNotificationsPlugin.pendingNotificationRequests();
   }
 }

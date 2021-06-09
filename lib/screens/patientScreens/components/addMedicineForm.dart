@@ -22,7 +22,8 @@ class AddMedicineForm extends StatefulWidget {
 
 class _AddMedicineFormState extends State<AddMedicineForm> {
   ///*************************************************************************
-  NotificationManager nm = NotificationManager();
+  // NotificationManager nm = NotificationManager();
+  NotificationManager nm = NotificationManager.nm;
   ///*************************************************************************
   TimeOfDay time = TimeOfDay.now();
   Map<UniqueKey, String> times = {};
@@ -370,10 +371,10 @@ class _AddMedicineFormState extends State<AddMedicineForm> {
                     if (id != null) {
                       ToastServices.defaultToast("good!!");
                       Navigator.pop(context);
-                      print(await dbhelper.selectAll());
+                      //print(await dbhelper.selectAll());
 
                       ///*************************************************************************
-                      nm.scheduleNotification();
+                      nm.refreshNotifications();
                       ///*************************************************************************
 
                       widget.onFormSave(true);

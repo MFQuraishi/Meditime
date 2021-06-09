@@ -16,6 +16,12 @@ class MedsDBHelper{
     return result;
   }
 
+  Future<List> selectAtId(id) async{
+    Database db = await MedsDatabase.instance.database;
+    var result = db.query("guestTable", where: '_id = ?', whereArgs: [id]);
+    return result;
+  }
+
   Future<int> deleteRow(id) async {
     Database db = await MedsDatabase.instance.database;
     return db.delete("guestTable", where: '_id=?', whereArgs: [id]);
