@@ -94,6 +94,8 @@ class NotificationManager {
 
   Future<int> refreshNotifications() async {
     data = await getData();
+    await Notifications().cancelAllNotifications();
+
     // seperateDifferentIntervalTypes();
     List<Map<String, dynamic>>  medsInDateRange = await getMedsInDateRange();
     List<Map<String, dynamic>> todaysMeds = await filterDatesValidForToday(medsInDateRange);

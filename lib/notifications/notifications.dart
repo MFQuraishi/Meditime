@@ -57,4 +57,8 @@ class Notifications {
   Future<List> getListOfTodaysNotifications()async{
     return await flutterLocalNotificationsPlugin.pendingNotificationRequests();
   }
+
+  Future<void> cancelAllNotifications()async{
+    await flutterLocalNotificationsPlugin.cancelAll();
+  }
 }

@@ -5,6 +5,7 @@ import 'package:meditime/screens/welcome/components/background.dart';
 import 'package:meditime/components/rounded_Button.dart';
 import 'package:meditime/screens/login/loginScreen.dart';
 import 'package:meditime/base/userTypeEnums.dart';
+import 'package:meditime/screens/vaccinationCenters/VaccinationCenters.dart';
 
 import 'package:meditime/notifications/notifications.dart';
 
@@ -43,6 +44,19 @@ class Body extends StatelessWidget {
                 ),
               );
             }
+          ),
+          RoundedButton(
+              text: "Vaccination Centers",
+              color: Color(0xff616e7d),
+              textColor: Colors.white,
+              press: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => VaccinationCenters(),
+                  ),
+                );
+              }
           ),
         ],
       ),
